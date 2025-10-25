@@ -80,6 +80,16 @@ EOF
     fi
     echo
 
+    # Display VPS network latency optimization
+    echo "[VPS Network Latency Optimization]"
+    if [ -f /etc/sysctl.d/99-vps-network-latency.conf ]; then
+        grep -v '^\s*#' /etc/sysctl.d/99-vps-network-latency.conf | grep -v '^\s*$'
+        echo "Current tcp_slow_start_after_idle: $(sysctl -n net.ipv4.tcp_slow_start_after_idle 2>/dev/null || echo "Unknown")"
+    else
+        echo "Not configured"
+    fi
+    echo	
+
     # Display memory configuration
     echo "[Memory Configuration]"
     if [ -f /etc/sysctl.d/99-memory-config.conf ]; then
@@ -386,6 +396,19 @@ vm.watermark_scale_factor = 200 # More aggressive swapping to avoid OOM
 vm.watermark_boost_factor = 0   # Disable watermark boosting for predictable behavior
 EOF
 sysctl -p /etc/sysctl.d/99-memory-config.conf >/dev/null 2>&1 || true
+
+# ========================================
+# VPS NETWORK OPTIMIZATION (PROVEN SETTINGS)
+# ========================================
+
+cat <<EOF > /etc/sysctl.d/99-vps-network-latency.conf
+# VPS Network Latency Optimizations - Minimal & Effective
+net.ipv4.tcp_slow_start_after_idle = 0
+net.core.default_qdisc = fq_codel
+net.ipv4.tcp_congestion_control = cubic
+net.ipv4.tcp_ecn = 2
+EOF
+sysctl -p /etc/sysctl.d/99-vps-network-latency.conf >/dev/null 2>&1 || true
 
 # ========================================
 # DISABLE SYSTEMD-JOURNALD (NO LOGGING)
