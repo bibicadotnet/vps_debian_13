@@ -94,6 +94,11 @@ sed -i '/^\s*#\?\s*ClientAliveInterval/d;/^\s*#\?\s*ClientAliveCountMax/d' "$SSH
 echo -e "ClientAliveInterval 7200\nClientAliveCountMax 3" >> "$SSH_CONFIG"
 systemctl restart sshd &>/dev/null || :
 
+# === REMOVE UNNECESSARY SERVICES ===
+apt purge -y qemu-guest-agent 2>/dev/null || true
+systemctl stop getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || true
+systemctl mask getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || true
+
 # === CONFIGURE STATIC IP AND REMOVE DHCP CLIENTS ===
 iface=$(ip route show default | awk '{print $5; exit}')
 gw=$(ip route show default | awk '{print $3; exit}')
