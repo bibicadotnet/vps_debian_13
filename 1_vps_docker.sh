@@ -122,25 +122,19 @@ apt autoremove -y 2>/dev/null || true
 systemctl restart networking
 
 # === INSTALL AND OPTIMIZE DOCKER ===
-
-# Install Docker if not already installed
 if ! command -v docker &>/dev/null; then
     curl -fsSL https://get.docker.com | sh
-    usermod -aG docker $(whoami)
-    systemctl start docker
-    systemctl enable docker
+    usermod -aG docker "${SUDO_USER:-$(id -un)}"
+    systemctl enable --now docker
 fi
 
-# Create optimal configuration for Docker
+# Configure Docker daemon
 mkdir -p /etc/docker
-cat <<EOF > /etc/docker/daemon.json
+cat > /etc/docker/daemon.json <<'EOF'
 {
   "storage-driver": "overlay2",
   "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "10m",
-    "max-file": "3"
-  },
+  "log-opts": {"max-size": "10m", "max-file": "3"},
   "max-concurrent-downloads": 10,
   "max-concurrent-uploads": 10,
   "dns": ["1.1.1.1", "8.8.8.8"],
@@ -149,6 +143,7 @@ cat <<EOF > /etc/docker/daemon.json
 EOF
 
 systemctl restart docker
+
 # === DONE ===
 cat <<'EOF'
 ========================================
