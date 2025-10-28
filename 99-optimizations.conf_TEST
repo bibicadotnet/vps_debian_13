@@ -1,0 +1,58 @@
+# =============================================================================
+# System Optimization for Low Latency & Stability
+# Target: DNS, DoH, Caddy on a lightweight VPS (IPv4-only, AWS EC2 Lightsail)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# IPv6: Disable completely to reduce overhead and avoid fallback delays
+# -----------------------------------------------------------------------------
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+# -----------------------------------------------------------------------------
+# Memory Management: Minimize swapping, ensure stable allocation
+# -----------------------------------------------------------------------------
+vm.swappiness = 1                     # Prefer RAM over swap (avoid I/O latency)
+vm.overcommit_memory = 0              # Use heuristic overcommit (safe for most apps)
+vm.min_free_kbytes = 65536            # Reserve ~64MB free RAM for emergency allocation
+
+# -----------------------------------------------------------------------------
+# Kernel Scheduler & NUMA: Reduce unnecessary overhead on virtualized systems
+# -----------------------------------------------------------------------------
+kernel.sched_autogroup_enabled = 0    # Disable per-session CPU scheduling (for servers)
+kernel.numa_balancing = 0             # Disable NUMA balancing (irrelevant on single-node VPS)
+
+# -----------------------------------------------------------------------------
+# Network: Optimized for low latency, fast response, and resilience
+# -----------------------------------------------------------------------------
+
+# Core network buffers (aligned with TCP limits to avoid bufferbloat)
+net.core.rmem_max = 4194304           # Max receive buffer size (4 MB)
+net.core.wmem_max = 4194304           # Max send buffer size (4 MB)
+net.core.netdev_max_backlog = 50000   # Max packets queued on input (handle bursts)
+net.core.somaxconn = 1024             # Max pending connections (suitable for light services)
+
+# TCP memory and behavior
+net.ipv4.tcp_rmem = 4096 16384 4194304   # Min/Default/Max receive buffer per socket
+net.ipv4.tcp_wmem = 4096 16384 4194304   # Min/Default/Max send buffer per socket
+net.ipv4.tcp_congestion_control = bbr    # Use BBR for low latency & high throughput
+net.ipv4.tcp_slow_start_after_idle = 0   # Maintain CWND after idle (avoid lag on reuse)
+
+# Connection handling and security
+net.ipv4.tcp_max_syn_backlog = 8192      # Max SYN queue size during handshake
+net.ipv4.tcp_syncookies = 1              # Enable SYN cookies to mitigate SYN flood
+net.ipv4.tcp_tw_reuse = 1                # Reuse TIME-WAIT sockets safely (for clients/proxies)
+net.ipv4.tcp_fin_timeout = 3             # Reduce FIN timeout from 60s to 3s (faster cleanup)
+net.ipv4.ip_local_port_range = 1024 65535 # Expand ephemeral port range for outbound connections
+
+# TIME-WAIT and connection cleanup
+net.ipv4.tcp_max_tw_buckets = 2000000    # Raise max TIME-WAIT sockets (prevent early recycling)
+
+# TCP keepalive (helps detect dead peers and clean stale connections)
+net.ipv4.tcp_keepalive_time = 300        # Start keepalive after 300s of idle
+net.ipv4.tcp_keepalive_intvl = 60        # Interval between keepalive probes
+net.ipv4.tcp_keepalive_probes = 3        # Number of failed probes before dropping connection
+
+# TCP Fast Open (TFO): Reduce handshake latency for repeated connections
+net.ipv4.tcp_fastopen = 3                # Enable TFO for both client (1) and server (2) → 3 = both
