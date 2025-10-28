@@ -1,4 +1,5 @@
 # =============================================================================
+# Debian 13 - Kernel: 6.16.3+deb13-cloud-amd64 4:34 AM 10/29/2025
 # System Optimization for Low Latency & Stability
 # Target: DNS, DoH, Caddy on a lightweight VPS (IPv4-only, AWS EC2 Lightsail)
 # =============================================================================
@@ -15,7 +16,6 @@ net.ipv6.conf.lo.disable_ipv6 = 1
 # -----------------------------------------------------------------------------
 vm.swappiness = 1                     # Prefer RAM over swap (avoid I/O latency)
 vm.overcommit_memory = 0              # Use heuristic overcommit (safe for most apps)
-vm.min_free_kbytes = 65536            # Reserve ~64MB free RAM for emergency allocation
 
 # -----------------------------------------------------------------------------
 # Kernel Scheduler & NUMA: Reduce unnecessary overhead on virtualized systems
@@ -36,7 +36,6 @@ net.core.somaxconn = 1024             # Max pending connections (suitable for li
 # TCP memory and behavior
 net.ipv4.tcp_rmem = 4096 16384 4194304   # Min/Default/Max receive buffer per socket
 net.ipv4.tcp_wmem = 4096 16384 4194304   # Min/Default/Max send buffer per socket
-net.ipv4.tcp_congestion_control = bbr    # Use BBR for low latency & high throughput
 net.ipv4.tcp_slow_start_after_idle = 0   # Maintain CWND after idle (avoid lag on reuse)
 
 # Connection handling and security
