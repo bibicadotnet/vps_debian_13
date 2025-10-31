@@ -60,10 +60,10 @@ This script automates a secure, minimal, and Docker-ready setup for Debian/Ubunt
 
 ### 1. **With Docker**
 ```bash
-apt install -y wget sudo && wget -qO vps.sh https://raw.githubusercontent.com/bibicadotnet/vps_debian_13/main/1_vps_docker.sh && sudo bash vps.sh
+apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash
 ```
 
 ### 2. **Without Docker**
 ```bash
-apt install -y wget sudo && wget -qO vps.sh https://raw.githubusercontent.com/bibicadotnet/vps_debian_13/main/1_vps.sh && sudo bash vps.sh
+apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash -s -- -no-docker
 ```
