@@ -285,6 +285,7 @@ else
         apt autoremove -y 2>/dev/null || true
         rm -rf /var/lib/docker /etc/docker /var/lib/containerd
         groupdel docker 2>/dev/null || true
+		hash -r
     fi
 fi
 
