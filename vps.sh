@@ -93,11 +93,11 @@ if $SETUP_HOSTNAME_DNS; then
 nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
-    chattr +i /etc/resolv.conf
+    chattr +i /etc/resolv.conf || :
 else
     echo "==> Removing DNS configuration..."
     { [ -f /etc/resolv.conf ] && chattr -i /etc/resolv.conf 2>/dev/null; } || :
-    rm -f /etc/resolv.conf
+    rm -f /etc/resolv.conf || :
     systemctl enable --now systemd-resolved &>/dev/null || :
     ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || :
 fi
@@ -114,10 +114,10 @@ vm.swappiness = 1
 EOF
     sysctl -p /etc/sysctl.d/99-optimizations.conf &>/dev/null || :
 
-    timedatectl set-timezone Asia/Ho_Chi_Minh
+    timedatectl set-timezone Asia/Ho_Chi_Minh || :
 else
     echo "==> Removing system tuning..."
-    rm -f /etc/sysctl.d/99-optimizations.conf
+    rm -f /etc/sysctl.d/99-optimizations.conf || :
     sysctl --system &>/dev/null || :
 fi
 
@@ -128,8 +128,8 @@ if $SETUP_SWAPFILE; then
     SWAP_SIZE=$((RAM_GB <= 2 ? 2 : 4))G
 
     swapoff /swapfile &>/dev/null || :
-    rm -f /swapfile
-    sed -i '\|/swapfile|d' /etc/fstab
+    rm -f /swapfile || :
+    sed -i '\|/swapfile|d' /etc/fstab || :
 
     if { fallocate -l "$SWAP_SIZE" /swapfile || 
          dd if=/dev/zero of=/swapfile bs=1M count=$(( ${SWAP_SIZE%G} * 1024 )) &>/dev/null; } 2>/dev/null
@@ -140,8 +140,8 @@ if $SETUP_SWAPFILE; then
 else
     echo "==> Removing swapfile..."
     swapoff /swapfile &>/dev/null || :
-    rm -f /swapfile
-    sed -i '\|/swapfile|d' /etc/fstab
+    rm -f /swapfile || :
+    sed -i '\|/swapfile|d' /etc/fstab || :
 fi
 
 # === DISABLE JOURNALD ===
@@ -156,7 +156,7 @@ if $DISABLE_LOGGING; then
 else
     echo "==> Enabling journald logging..."
     systemctl unmask systemd-journald{,-audit,-dev-log}.socket systemd-journald &>/dev/null || :
-    rm -f /etc/systemd/journald.conf.d/no-logging.conf
+    rm -f /etc/systemd/journald.conf.d/no-logging.conf || :
     systemctl restart systemd-journald &>/dev/null || :
 fi
 
@@ -182,35 +182,35 @@ RemainAfterExit=yes
 WantedBy=basic.target
 EOF
 
-    systemctl daemon-reload
+    systemctl daemon-reload || :
     systemctl enable --now disable-thp.service &>/dev/null || :
 else
     echo "==> Removing THP disable service..."
     systemctl disable --now disable-thp.service &>/dev/null || :
-    rm -f /etc/systemd/system/disable-thp.service
-    systemctl daemon-reload
+    rm -f /etc/systemd/system/disable-thp.service || :
+    systemctl daemon-reload || :
 fi
 
 # === SSH KEEPALIVE ===
 if $SETUP_SSH_KEEPALIVE; then
     echo "==> Configuring SSH keepalive..."
     SSH_CONFIG="/etc/ssh/sshd_config"
-    sed -i '/^\s*#\?\s*ClientAliveInterval/d;/^\s*#\?\s*ClientAliveCountMax/d' "$SSH_CONFIG"
+    sed -i '/^\s*#\?\s*ClientAliveInterval/d;/^\s*#\?\s*ClientAliveCountMax/d' "$SSH_CONFIG" || :
     echo -e "ClientAliveInterval 7200\nClientAliveCountMax 3" >> "$SSH_CONFIG"
     systemctl restart sshd &>/dev/null || :
 else
     echo "==> Removing SSH keepalive configuration..."
     SSH_CONFIG="/etc/ssh/sshd_config"
-    sed -i '/^\s*ClientAliveInterval\s\+7200/d;/^\s*ClientAliveCountMax\s\+3/d' "$SSH_CONFIG"
+    sed -i '/^\s*ClientAliveInterval\s\+7200/d;/^\s*ClientAliveCountMax\s\+3/d' "$SSH_CONFIG" || :
     systemctl restart sshd &>/dev/null || :
 fi
 
 # === REMOVE UNNECESSARY SERVICES ===
 if $REMOVE_SERVICES; then
     echo "==> Removing unnecessary services..."
-    apt purge -y qemu-guest-agent 2>/dev/null || true
-    systemctl stop getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || true
-    systemctl mask getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || true
+    apt purge -y qemu-guest-agent 2>/dev/null || :
+    systemctl stop getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || :
+    systemctl mask getty@tty1.service serial-getty@ttyS0.service 2>/dev/null || :
 fi
 
 # === CONFIGURE STATIC IP ===
@@ -232,10 +232,10 @@ iface $iface inet static
     gateway $gw
 EOF
 
-    apt purge -y dhcpcd5 dhcpcd dhcpcd-base 2>/dev/null || true
-    apt autoremove -y 2>/dev/null || true
+    apt purge -y dhcpcd5 dhcpcd dhcpcd-base 2>/dev/null || :
+    apt autoremove -y 2>/dev/null || :
 
-    systemctl restart networking
+    systemctl restart networking || :
 else
     echo "==> Removing static IP configuration..."
     iface=$(ip route show default | awk '{print $5; exit}')
@@ -248,7 +248,7 @@ auto $iface
 iface $iface inet dhcp
 EOF
     
-    systemctl restart networking
+    systemctl restart networking || :
 fi
 
 # === INSTALL DOCKER ===
@@ -256,8 +256,8 @@ if $INSTALL_DOCKER; then
     echo "==> Installing and optimizing Docker..."
     if ! command -v docker &>/dev/null; then
         curl -fsSL https://get.docker.com | sh
-        usermod -aG docker "${SUDO_USER:-$(id -un)}"
-        systemctl enable --now docker
+        usermod -aG docker "${SUDO_USER:-$(id -un)}" || :
+        systemctl enable --now docker || :
     fi
 
     mkdir -p /etc/docker
@@ -273,19 +273,22 @@ if $INSTALL_DOCKER; then
 }
 EOF
 
-    systemctl restart docker
+    systemctl restart docker || :
 else
     if command -v docker &>/dev/null; then
         echo "==> Removing Docker..."
-        docker stop $(docker ps -aq) 2>/dev/null || true
-        docker system prune -af --volumes 2>/dev/null || true
-        systemctl stop docker docker.socket containerd 2>/dev/null || true
-        systemctl disable docker docker.socket containerd 2>/dev/null || true
-        apt purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 2>/dev/null || true
-        apt autoremove -y 2>/dev/null || true
-        rm -rf /var/lib/docker /etc/docker /var/lib/containerd
-        groupdel docker 2>/dev/null || true
-		hash -r
+        docker stop $(docker ps -aq) 2>/dev/null || :
+        docker system prune -af --volumes 2>/dev/null || :
+        systemctl stop docker docker.socket containerd 2>/dev/null || :
+        systemctl disable docker docker.socket containerd 2>/dev/null || :
+        apt purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 2>/dev/null || :
+        apt autoremove -y 2>/dev/null || :
+        rm -rf /var/lib/docker /etc/docker /var/lib/containerd || :
+        rm -f /usr/bin/docker /usr/local/bin/docker || :
+        groupdel docker 2>/dev/null || :
+        hash -r 2>/dev/null || :
+        
+        sleep 2
     fi
 fi
 
@@ -300,7 +303,7 @@ EOF
 
 # Check DNS
 if [ -f /etc/resolv.conf ] && grep -q "8.8.8.8" /etc/resolv.conf 2>/dev/null; then
-    DNS_SERVERS=$(grep "^nameserver" /etc/resolv.conf | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
+    DNS_SERVERS=$(grep "^nameserver" /etc/resolv.conf 2>/dev/null | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//' || echo "N/A")
     echo "  DNS:                    $DNS_SERVERS"
 else
     echo "  DNS:                    System default (systemd-resolved)"
@@ -308,7 +311,7 @@ fi
 
 # Check System tuning
 if [ -f /etc/sysctl.d/99-optimizations.conf ]; then
-    TIMEZONE=$(timedatectl | grep "Time zone" | awk '{print $3}')
+    TIMEZONE=$(timedatectl 2>/dev/null | grep "Time zone" | awk '{print $3}' || echo "N/A")
     echo "  System tuning:          IPv6 disabled, swappiness=1"
     echo "  Timezone:               $TIMEZONE"
 else
@@ -316,7 +319,7 @@ else
 fi
 
 # Check Swapfile
-SWAP_INFO=$(swapon --show --noheadings 2>/dev/null | grep "/swapfile" | awk '{print $3}')
+SWAP_INFO=$(swapon --show --noheadings 2>/dev/null | grep "/swapfile" | awk '{print $3}' || echo "")
 if [ -n "$SWAP_INFO" ]; then
     echo "  Swapfile:               $SWAP_INFO"
 else
@@ -338,8 +341,8 @@ else
 fi
 
 # Check SSH keepalive
-SSH_INTERVAL=$(grep "^ClientAliveInterval" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
-SSH_COUNT=$(grep "^ClientAliveCountMax" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
+SSH_INTERVAL=$(grep "^ClientAliveInterval" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}' || echo "")
+SSH_COUNT=$(grep "^ClientAliveCountMax" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}' || echo "")
 if [ -n "$SSH_INTERVAL" ] && [ -n "$SSH_COUNT" ]; then
     TOTAL_SECONDS=$((SSH_INTERVAL * SSH_COUNT))
     TOTAL_HOURS=$((TOTAL_SECONDS / 3600))
@@ -350,39 +353,46 @@ fi
 
 # Check Static IP
 if grep -q "iface.*inet static" /etc/network/interfaces 2>/dev/null; then
-    IFACE=$(ip route show default | awk '{print $5; exit}')
-    IP_ADDR=$(ip -4 addr show dev "$IFACE" 2>/dev/null | awk '/inet/ && !/127\.0\.0\.1/ {print $2; exit}')
-    GATEWAY=$(ip route show default | awk '{print $3; exit}')
-    echo "  Network:                Static IP"
-    echo "    Interface:            $IFACE"
-    echo "    Address:              $IP_ADDR"
-    echo "    Gateway:              $GATEWAY"
+    IFACE=$(ip route show default 2>/dev/null | awk '{print $5; exit}' || echo "")
+    
+    if [ -n "$IFACE" ]; then
+        IP_ADDR=$(ip -4 addr show dev "$IFACE" 2>/dev/null | awk '/inet/ && !/127\.0\.0\.1/ {print $2; exit}' || echo "N/A")
+        GATEWAY=$(ip route show default 2>/dev/null | awk '{print $3; exit}' || echo "N/A")
+        echo "  Network:                Static IP"
+        echo "    Interface:            $IFACE"
+        echo "    Address:              $IP_ADDR"
+        echo "    Gateway:              $GATEWAY"
+    else
+        echo "  Network:                Static IP (interface info unavailable)"
+    fi
 else
     echo "  Network:                DHCP"
 fi
 
 # Check Docker
-if command -v docker &>/dev/null; then
-    DOCKER_VER=$(docker --version 2>/dev/null | awk '{print $3}' | sed 's/,$//')
+if command -v docker &>/dev/null 2>&1; then
+    DOCKER_VER=$(docker --version 2>/dev/null | awk '{print $3}' | sed 's/,$//' || echo "unknown")
     echo "  Docker:                 $DOCKER_VER"
     
-    STORAGE=$(jq -r '."storage-driver"' /etc/docker/daemon.json 2>/dev/null)
-    LOG_DRIVER=$(jq -r '."log-driver"' /etc/docker/daemon.json 2>/dev/null)
-    LOG_SIZE=$(jq -r '."log-opts"."max-size"' /etc/docker/daemon.json 2>/dev/null)
-    LOG_FILES=$(jq -r '."log-opts"."max-file"' /etc/docker/daemon.json 2>/dev/null)
-    MAX_DOWN=$(jq -r '."max-concurrent-downloads"' /etc/docker/daemon.json 2>/dev/null)
-    MAX_UP=$(jq -r '."max-concurrent-uploads"' /etc/docker/daemon.json 2>/dev/null)
-    DNS_SERVERS=$(jq -r '.dns | join(", ")' /etc/docker/daemon.json 2>/dev/null)
-    USERLAND=$(jq -r '."userland-proxy"' /etc/docker/daemon.json 2>/dev/null)
-    
-    echo "    Storage driver:       $STORAGE"
-    echo "    Log driver:           $LOG_DRIVER"
-    echo "    Log max size:         $LOG_SIZE"
-    echo "    Log max files:        $LOG_FILES"
-    echo "    Max downloads:        $MAX_DOWN"
-    echo "    Max uploads:          $MAX_UP"
-    echo "    DNS:                  $DNS_SERVERS"
-    echo "    Userland proxy:       $USERLAND"
+    if [ -f /etc/docker/daemon.json ]; then
+        STORAGE=$(jq -r '."storage-driver" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        LOG_DRIVER=$(jq -r '."log-driver" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        LOG_SIZE=$(jq -r '."log-opts"."max-size" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        LOG_FILES=$(jq -r '."log-opts"."max-file" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        MAX_DOWN=$(jq -r '."max-concurrent-downloads" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        MAX_UP=$(jq -r '."max-concurrent-uploads" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        DNS_SERVERS=$(jq -r '.dns | join(", ") // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        USERLAND=$(jq -r '."userland-proxy" // "N/A"' /etc/docker/daemon.json 2>/dev/null || echo "N/A")
+        
+        echo "    Storage driver:       $STORAGE"
+        echo "    Log driver:           $LOG_DRIVER"
+        echo "    Log max size:         $LOG_SIZE"
+        echo "    Log max files:        $LOG_FILES"
+        echo "    Max downloads:        $MAX_DOWN"
+        echo "    Max uploads:          $MAX_UP"
+        echo "    DNS:                  $DNS_SERVERS"
+        echo "    Userland proxy:       $USERLAND"
+    fi
 else
     echo "  Docker:                 Not installed"
 fi
