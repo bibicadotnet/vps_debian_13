@@ -294,19 +294,64 @@ cat <<'EOF'
 VPS SETUP COMPLETED
 ========================================
 
-Configuration applied:
+Current system status:
 EOF
 
-echo "  Essential packages:     $($INSTALL_PACKAGES && echo "✓ Installed" || echo "✗ Skipped")"
-echo "  Hostname & DNS:         $($SETUP_HOSTNAME_DNS && echo "✓ Configured" || echo "✗ Removed")"
-echo "  System tuning:          $($SETUP_SYSTEM_TUNING && echo "✓ Applied" || echo "✗ Removed")"
-echo "  Swapfile:               $($SETUP_SWAPFILE && echo "✓ Created" || echo "✗ Removed")"
-echo "  Logging:                $($DISABLE_LOGGING && echo "✗ Disabled" || echo "✓ Enabled")"
-echo "  Transparent Huge Pages: $($DISABLE_THP && echo "✗ Disabled" || echo "✓ Removed")"
-echo "  SSH keepalive:          $($SETUP_SSH_KEEPALIVE && echo "✓ Configured" || echo "✗ Removed")"
-echo "  Service cleanup:        $($REMOVE_SERVICES && echo "✓ Done" || echo "✗ Skipped")"
-echo "  Static IP:              $($SETUP_STATIC_IP && echo "✓ Configured" || echo "✗ Removed")"
-echo "  Docker:                 $($INSTALL_DOCKER && echo "✓ Installed" || echo "✗ Removed")"
+# Check DNS
+if [ -f /etc/resolv.conf ] && grep -q "8.8.8.8" /etc/resolv.conf 2>/dev/null; then
+    echo "  Hostname & DNS:         ✓ Configured"
+else
+    echo "  Hostname & DNS:         ✗ Not configured"
+fi
+
+# Check System tuning
+if [ -f /etc/sysctl.d/99-optimizations.conf ]; then
+    echo "  System tuning:          ✓ Applied"
+else
+    echo "  System tuning:          ✗ Not applied"
+fi
+
+# Check Swapfile
+if swapon --show | grep -q "/swapfile" 2>/dev/null; then
+    echo "  Swapfile:               ✓ Active"
+else
+    echo "  Swapfile:               ✗ Not active"
+fi
+
+# Check Logging
+if [ -f /etc/systemd/journald.conf.d/no-logging.conf ]; then
+    echo "  Logging:                ✗ Disabled"
+else
+    echo "  Logging:                ✓ Enabled"
+fi
+
+# Check THP
+if [ -f /etc/systemd/system/disable-thp.service ]; then
+    echo "  Transparent Huge Pages: ✗ Disabled"
+else
+    echo "  Transparent Huge Pages: ✓ Enabled"
+fi
+
+# Check SSH keepalive
+if grep -q "ClientAliveInterval 7200" /etc/ssh/sshd_config 2>/dev/null; then
+    echo "  SSH keepalive:          ✓ Configured"
+else
+    echo "  SSH keepalive:          ✗ Not configured"
+fi
+
+# Check Static IP
+if grep -q "iface.*inet static" /etc/network/interfaces 2>/dev/null; then
+    echo "  Static IP:              ✓ Configured"
+else
+    echo "  Static IP:              ✗ Not configured"
+fi
+
+# Check Docker
+if command -v docker &>/dev/null; then
+    echo "  Docker:                 ✓ Installed"
+else
+    echo "  Docker:                 ✗ Not installed"
+fi
 
 cat <<'EOF'
 
