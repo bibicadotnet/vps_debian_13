@@ -372,7 +372,8 @@ if command -v docker &>/dev/null; then
         MAX_DOWN=$(jq -r '."max-concurrent-downloads" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
         MAX_UP=$(jq -r '."max-concurrent-uploads" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
         DNS_SERVERS=$(jq -r '.dns | join(", ") // "N/A"' /etc/docker/daemon.json 2>/dev/null)
-        USERLAND=$(jq -r '."userland-proxy" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        USERLAND=$(jq -r '."userland-proxy"' /etc/docker/daemon.json 2>/dev/null)
+        [ "$USERLAND" = "null" ] && USERLAND="N/A"
         
         echo "    Storage driver:       $STORAGE"
         echo "    Log driver:           $LOG_DRIVER"
