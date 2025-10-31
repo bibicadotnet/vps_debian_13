@@ -68,7 +68,9 @@ echo "==> Checking privileges and OS..."
 
 . /etc/os-release
 case ${ID:-} in
-  *) [[ "${ID_LIKE,,}" == *"debian"* || "${ID,,}" == "debian" ]] || { echo "ERROR: Only Debian-based systems supported." >&2; exit 1; } ;;
+  ubuntu) (( ${VERSION_ID%%.*} >= 18 )) || exit 1 ;;
+  debian) (( ${VERSION_ID%%.*} >= 10 )) || exit 1 ;;
+  *) echo "ERROR: Only Debian/Ubuntu supported." >&2; exit 1 ;;
 esac
 
 # === ESSENTIAL PACKAGES ===
