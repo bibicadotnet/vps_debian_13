@@ -58,16 +58,16 @@ This script automates a secure, lightweight, and performance-optimized setup for
 
 This script automates a secure, minimal, and Docker-ready setup for Debian/Ubuntu VPS. Two variants are available:
 
-### 1. **With Docker**
+### With Docker
 ```bash
 apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash
 ```
 
-### 2. **Without Docker**
+### Without Docker
 ```bash
 apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash -s -- -no-docker
 ```
-### Options:
+### Options
 ```
   -no-packages     Skip installing essential packages
   -no-dns          Skip/remove hostname and DNS configuration
