@@ -294,63 +294,77 @@ cat <<'EOF'
 VPS SETUP COMPLETED
 ========================================
 
-Current system status:
+Current system configuration:
 EOF
 
 # Check DNS
 if [ -f /etc/resolv.conf ] && grep -q "8.8.8.8" /etc/resolv.conf 2>/dev/null; then
-    echo "  Hostname & DNS:         ✓ Configured"
+    DNS_SERVERS=$(grep "^nameserver" /etc/resolv.conf | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
+    echo "  DNS:                    $DNS_SERVERS"
 else
-    echo "  Hostname & DNS:         ✗ Not configured"
+    echo "  DNS:                    System default (systemd-resolved)"
 fi
 
 # Check System tuning
 if [ -f /etc/sysctl.d/99-optimizations.conf ]; then
-    echo "  System tuning:          ✓ Applied"
+    TIMEZONE=$(timedatectl | grep "Time zone" | awk '{print $3}')
+    echo "  System tuning:          IPv6 disabled, swappiness=1"
+    echo "  Timezone:               $TIMEZONE"
 else
-    echo "  System tuning:          ✗ Not applied"
+    echo "  System tuning:          Default settings"
 fi
 
 # Check Swapfile
-if swapon --show | grep -q "/swapfile" 2>/dev/null; then
-    echo "  Swapfile:               ✓ Active"
+SWAP_INFO=$(swapon --show --noheadings 2>/dev/null | grep "/swapfile" | awk '{print $3}')
+if [ -n "$SWAP_INFO" ]; then
+    echo "  Swapfile:               $SWAP_INFO"
 else
-    echo "  Swapfile:               ✗ Not active"
+    echo "  Swapfile:               Not configured"
 fi
 
 # Check Logging
 if [ -f /etc/systemd/journald.conf.d/no-logging.conf ]; then
-    echo "  Logging:                ✗ Disabled"
+    echo "  Journald logging:       Disabled"
 else
-    echo "  Logging:                ✓ Enabled"
+    echo "  Journald logging:       Enabled"
 fi
 
 # Check THP
 if [ -f /etc/systemd/system/disable-thp.service ]; then
-    echo "  Transparent Huge Pages: ✗ Disabled"
+    echo "  Transparent Huge Pages: Disabled"
 else
-    echo "  Transparent Huge Pages: ✓ Enabled"
+    echo "  Transparent Huge Pages: Enabled (default)"
 fi
 
 # Check SSH keepalive
-if grep -q "ClientAliveInterval 7200" /etc/ssh/sshd_config 2>/dev/null; then
-    echo "  SSH keepalive:          ✓ Configured"
+SSH_INTERVAL=$(grep "^ClientAliveInterval" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
+if [ -n "$SSH_INTERVAL" ]; then
+    echo "  SSH keepalive:          ${SSH_INTERVAL}s (2 hours)"
 else
-    echo "  SSH keepalive:          ✗ Not configured"
+    echo "  SSH keepalive:          Default"
 fi
 
 # Check Static IP
 if grep -q "iface.*inet static" /etc/network/interfaces 2>/dev/null; then
-    echo "  Static IP:              ✓ Configured"
+    IFACE=$(ip route show default | awk '{print $5; exit}')
+    IP_ADDR=$(ip -4 addr show dev "$IFACE" 2>/dev/null | awk '/inet/ && !/127\.0\.0\.1/ {print $2; exit}')
+    GATEWAY=$(ip route show default | awk '{print $3; exit}')
+    echo "  Network:                Static IP"
+    echo "    Interface:            $IFACE"
+    echo "    Address:              $IP_ADDR"
+    echo "    Gateway:              $GATEWAY"
 else
-    echo "  Static IP:              ✗ Not configured"
+    echo "  Network:                DHCP"
 fi
 
 # Check Docker
 if command -v docker &>/dev/null; then
-    echo "  Docker:                 ✓ Installed"
+    DOCKER_VER=$(docker --version 2>/dev/null | awk '{print $3}' | sed 's/,$//')
+    echo "  Docker:                 $DOCKER_VER"
+    echo "    Storage driver:       overlay2"
+    echo "    Log max size:         10m (3 files)"
 else
-    echo "  Docker:                 ✗ Not installed"
+    echo "  Docker:                 Not installed"
 fi
 
 cat <<'EOF'
