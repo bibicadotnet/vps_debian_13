@@ -338,8 +338,11 @@ fi
 
 # Check SSH keepalive
 SSH_INTERVAL=$(grep "^ClientAliveInterval" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
-if [ -n "$SSH_INTERVAL" ]; then
-    echo "  SSH keepalive:          ${SSH_INTERVAL}s (2 hours)"
+SSH_COUNT=$(grep "^ClientAliveCountMax" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
+if [ -n "$SSH_INTERVAL" ] && [ -n "$SSH_COUNT" ]; then
+    TOTAL_SECONDS=$((SSH_INTERVAL * SSH_COUNT))
+    TOTAL_HOURS=$((TOTAL_SECONDS / 3600))
+    echo "  SSH keepalive:          ${SSH_INTERVAL}s × ${SSH_COUNT} = ${TOTAL_HOURS}h timeout"
 else
     echo "  SSH keepalive:          Default"
 fi
@@ -361,8 +364,25 @@ fi
 if command -v docker &>/dev/null; then
     DOCKER_VER=$(docker --version 2>/dev/null | awk '{print $3}' | sed 's/,$//')
     echo "  Docker:                 $DOCKER_VER"
-    echo "    Storage driver:       overlay2"
-    echo "    Log max size:         10m (3 files)"
+    if [ -f /etc/docker/daemon.json ]; then
+        STORAGE=$(jq -r '."storage-driver" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        LOG_DRIVER=$(jq -r '."log-driver" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        LOG_SIZE=$(jq -r '."log-opts"."max-size" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        LOG_FILES=$(jq -r '."log-opts"."max-file" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        MAX_DOWN=$(jq -r '."max-concurrent-downloads" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        MAX_UP=$(jq -r '."max-concurrent-uploads" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        DNS_SERVERS=$(jq -r '.dns | join(", ") // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        USERLAND=$(jq -r '."userland-proxy" // "N/A"' /etc/docker/daemon.json 2>/dev/null)
+        
+        echo "    Storage driver:       $STORAGE"
+        echo "    Log driver:           $LOG_DRIVER"
+        echo "    Log max size:         $LOG_SIZE"
+        echo "    Log max files:        $LOG_FILES"
+        echo "    Max downloads:        $MAX_DOWN"
+        echo "    Max uploads:          $MAX_UP"
+        echo "    DNS:                  $DNS_SERVERS"
+        echo "    Userland proxy:       $USERLAND"
+    fi
 else
     echo "  Docker:                 Not installed"
 fi
