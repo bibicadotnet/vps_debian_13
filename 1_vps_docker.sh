@@ -57,12 +57,12 @@ then
 fi
 
 # === DISABLE JOURNALD ===
-systemctl mask --now systemd-journald{,-audit,-dev-log}.socket systemd-journald &>/dev/null || :
+#systemctl mask --now systemd-journald{,-audit,-dev-log}.socket systemd-journald &>/dev/null || :
 
-mkdir -p /etc/systemd/journald.conf.d
-echo -e "[Journal]\nStorage=none" > /etc/systemd/journald.conf.d/no-logging.conf
-rm -rf /var/log/journal /run/log/journal &>/dev/null || :
-dmesg -C &>/dev/null || :
+#mkdir -p /etc/systemd/journald.conf.d
+#echo -e "[Journal]\nStorage=none" > /etc/systemd/journald.conf.d/no-logging.conf
+#rm -rf /var/log/journal /run/log/journal &>/dev/null || :
+#dmesg -C &>/dev/null || :
 
 # === DISABLE TRANSPARENT HUGE PAGES ===
 { echo never > /sys/kernel/mm/transparent_hugepage/enabled &&
