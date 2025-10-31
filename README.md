@@ -67,3 +67,17 @@ apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash
 ```bash
 apt install -y curl sudo && curl -fsSL go.bibica.net/vps | sudo bash -s -- -no-docker
 ```
+### Options:
+```
+  -no-packages     Skip installing essential packages
+  -no-dns          Skip/remove hostname and DNS configuration
+  -no-tuning       Skip/remove system tuning (sysctl)
+  -no-swap         Skip/remove swapfile
+  -no-log          Disable journald logging
+  -no-thp          Skip/remove THP disable service
+  -no-ssh          Skip/remove SSH keepalive configuration
+  -no-cleanup      Skip removing unnecessary services
+  -no-static-ip    Skip/remove static IP configuration
+  -no-docker       Skip/remove Docker installation
+  -h, --help       Display this help message
+```
