@@ -56,7 +56,7 @@ This script automates a secure, lightweight, and performance-optimized setup for
 
 ## 🚀 Installation
 
-This script automates a secure, minimal, and Docker-ready setup for Debian/Ubuntu VPS. Two variants are available:
+This script automates a secure, minimal, and Docker-ready setup for Debian/Ubuntu VPS.
 
 ### With Docker
 ```bash
