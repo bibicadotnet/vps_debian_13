@@ -220,6 +220,12 @@ if $SETUP_STATIC_IP; then
     gw=$(ip route show default | awk '{print $3; exit}')
     addr_cidr=$(ip -4 addr show dev "$iface" | awk '/inet/ && !/127\.0\.0\.1/ {print $2; exit}')
 
+    # Tự động sửa /22 thành /24 nếu gateway là x.x.x.1
+    if [[ "$gw" =~ \.[0-9]+\.[0-9]+\.1$ ]] && [[ "$addr_cidr" =~ /22$ ]]; then
+        addr_cidr="${addr_cidr%/22}/24"
+        echo "  WARNING: Changed subnet from /22 to /24 based on gateway pattern"
+    fi
+
     dpkg -l ifupdown &>/dev/null || apt install -y ifupdown
 
     cat > /etc/network/interfaces <<EOF
