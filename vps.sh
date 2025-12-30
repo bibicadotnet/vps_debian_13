@@ -112,12 +112,22 @@ net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 vm.swappiness = 1
 EOF
+    
+    # MosDNS-X UDP Buffer Configuration
+    cat > /etc/sysctl.d/99-mosdns-udp.conf <<'EOF'
+# MosDNS-X UDP Buffer for DNS-over-QUIC
+net.core.rmem_max = 7500000
+net.core.wmem_max = 7500000
+EOF
+    
     sysctl -p /etc/sysctl.d/99-optimizations.conf &>/dev/null || :
+    sysctl -p /etc/sysctl.d/99-mosdns-udp.conf &>/dev/null || :
 
     timedatectl set-timezone Asia/Ho_Chi_Minh || :
 else
     echo "==> Removing system tuning..."
     rm -f /etc/sysctl.d/99-optimizations.conf || :
+    rm -f /etc/sysctl.d/99-mosdns-udp.conf || :
     sysctl --system &>/dev/null || :
 fi
 
