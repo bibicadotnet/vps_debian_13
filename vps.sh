@@ -113,21 +113,29 @@ net.ipv6.conf.lo.disable_ipv6 = 1
 vm.swappiness = 1
 EOF
     
-    # MosDNS-X UDP Buffer Configuration
-    cat > /etc/sysctl.d/99-mosdns-udp.conf <<'EOF'
+# MosDNS-X UDP Buffer Configuration
+cat > /etc/sysctl.d/99-mosdns-udp.conf <<'EOF'
 # MosDNS-X UDP Buffer for DNS-over-QUIC
 net.core.rmem_max = 7500000
 net.core.wmem_max = 7500000
 EOF
     
+    # Load KTLS module for MosDNS-X DoT optimization
+    echo "==> Loading KTLS module..."
+    modprobe tls 2>/dev/null || echo "Warning: KTLS module not available (kernel < 5.3)"
+    
+    # Auto-load on boot
+    mkdir -p /etc/modules-load.d
+    echo "tls" > /etc/modules-load.d/tls.conf
+    
     sysctl -p /etc/sysctl.d/99-optimizations.conf &>/dev/null || :
     sysctl -p /etc/sysctl.d/99-mosdns-udp.conf &>/dev/null || :
-
     timedatectl set-timezone Asia/Ho_Chi_Minh || :
 else
     echo "==> Removing system tuning..."
     rm -f /etc/sysctl.d/99-optimizations.conf || :
     rm -f /etc/sysctl.d/99-mosdns-udp.conf || :
+    rm -f /etc/modules-load.d/tls.conf || :
     sysctl --system &>/dev/null || :
 fi
 
